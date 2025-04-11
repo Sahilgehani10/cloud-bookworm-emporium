@@ -11,6 +11,7 @@ import BookDetail from "./pages/BookDetail";
 import CartPage from "./pages/CartPage";
 import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
+import AwsConfigPage from "./pages/AwsConfigPage";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/books/:id" element={<BookDetail />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/aws-config" element={<AwsConfigPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

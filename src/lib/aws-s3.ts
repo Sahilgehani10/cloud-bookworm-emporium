@@ -1,17 +1,34 @@
 
-import { S3_BUCKET_NAME } from './aws-config';
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3_BUCKET_NAME, awsConfig, isAwsConfigured } from './aws-config';
 
-// Simulated S3 service for storing and retrieving book cover images
+// Initialize the S3 client
+const s3Client = new S3Client(awsConfig);
+
 export const s3Service = {
   // Get book cover image URL
   getImageUrl: (imageKey: string): string => {
-    // In a real implementation, this would generate a valid S3 URL
-    return `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${imageKey}`;
+    if (!imageKey) return '';
+    
+    if (isAwsConfigured()) {
+      // Generate a URL for the S3 object (this is a public URL)
+      return `https://${S3_BUCKET_NAME}.s3.amazonaws.com/${imageKey}`;
+      
+      // For private objects, you would generate a presigned URL instead
+      // That code would look like:
+      // const command = new GetObjectCommand({
+      //   Bucket: S3_BUCKET_NAME,
+      //   Key: imageKey
+      // });
+      // return getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    } else {
+      // Fallback to placeholder image when AWS is not configured
+      return s3Service.getPlaceholderCoverUrl(imageKey);
+    }
   },
   
   // For demo purposes, we're using placeholder cover images
   getPlaceholderCoverUrl: (bookId: string): string => {
-    // Using placeholder images by ID (would normally come from S3)
     const placeholders = [
       'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=300',
       'https://images.unsplash.com/photo-1543002588-bfa74002ed7e?q=80&w=300',

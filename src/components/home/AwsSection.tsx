@@ -1,8 +1,14 @@
 
 import React from 'react';
-import { Database, HardDrive, Shield } from 'lucide-react';
+import { Database, HardDrive, Shield, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { isAwsConfigured } from '@/lib/aws-config';
 
 const AwsSection = () => {
+  const navigate = useNavigate();
+  const isConfigured = isAwsConfigured();
+
   return (
     <section className="py-16 bg-bookstore-primary text-white">
       <div className="container mx-auto px-4">
@@ -12,6 +18,15 @@ const AwsSection = () => {
             Our online bookstore is built on Amazon Web Services, providing a secure, 
             scalable, and reliable shopping experience.
           </p>
+          {!isConfigured && (
+            <Button 
+              className="mt-4 bg-bookstore-accent hover:bg-bookstore-accent/90 text-black"
+              onClick={() => navigate('/aws-config')}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configure AWS Connection
+            </Button>
+          )}
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
