@@ -1,26 +1,24 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import { dynamoDbService } from '../lib/aws-dynamodb';
-import { cognitoService } from '../lib/aws-cognito';
-import { Book, BookCategory } from '../types/book';
-import { Skeleton } from '@/components/ui/skeleton';
+import { booksService } from '../services/books-service';
+import { authService } from '../lib/auth-service';
+import { Book } from '@/types/book';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import AdminBookForm from '@/components/admin/AdminBookForm';
 
 const AdminBooksPage = () => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Check if user is admin
-  useEffect(() => {
-    if (!cognitoService.isAuthenticated()) {
+  React.useEffect(() => {
+    if (!authService.isAuthenticated()) {
       toast({
         title: "Authentication Required",
         description: "Please log in to access this page.",
@@ -30,7 +28,7 @@ const AdminBooksPage = () => {
       return;
     }
     
-    if (!cognitoService.isAdmin()) {
+    if (!authService.isAdmin()) {
       toast({
         title: "Access Denied",
         description: "You do not have permission to access this page.",
@@ -41,27 +39,29 @@ const AdminBooksPage = () => {
     }
   }, [navigate]);
 
-  // Load books
-  useEffect(() => {
-    const fetchBooks = async () => {
-      setIsLoading(true);
-      try {
-        const allBooks = await dynamoDbService.getAllBooks();
-        setBooks(allBooks);
-      } catch (error) {
-        console.error('Failed to fetch books:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load books. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Queries and Mutations
+  const { data: books, isLoading } = useQuery({
+    queryKey: ['books'],
+    queryFn: booksService.getAllBooks,
+  });
 
-    fetchBooks();
-  }, []);
+  const deleteMutation = useMutation({
+    mutationFn: booksService.deleteBook,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      toast({
+        title: "Success",
+        description: "Book deleted successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete book. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleCreateBook = () => {
     setSelectedBook(null);
@@ -74,45 +74,28 @@ const AdminBooksPage = () => {
   };
 
   const handleDeleteBook = async (id: string) => {
-    try {
-      await dynamoDbService.deleteBook(id);
-      setBooks(books.filter(book => book.id !== id));
-      toast({
-        title: "Success",
-        description: "Book deleted successfully.",
-      });
-    } catch (error) {
-      console.error('Failed to delete book:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete book. Please try again.",
-        variant: "destructive",
-      });
-    }
+    deleteMutation.mutate(id);
   };
 
   const handleSaveBook = async (bookData: Omit<Book, 'id'> | Book) => {
     try {
-      let savedBook: Book;
-      
       if ('id' in bookData) {
         // Update existing book
-        savedBook = await dynamoDbService.updateBook(bookData.id, bookData);
-        setBooks(books.map(book => book.id === savedBook.id ? savedBook : book));
+        await booksService.updateBook(bookData.id, bookData);
         toast({
           title: "Success",
           description: "Book updated successfully.",
         });
       } else {
         // Create new book
-        savedBook = await dynamoDbService.createBook(bookData);
-        setBooks([...books, savedBook]);
+        await booksService.createBook(bookData);
         toast({
           title: "Success",
           description: "Book created successfully.",
         });
       }
       
+      queryClient.invalidateQueries({ queryKey: ['books'] });
       setIsFormOpen(false);
     } catch (error) {
       console.error('Failed to save book:', error);
@@ -138,18 +121,7 @@ const AdminBooksPage = () => {
         </div>
 
         {isLoading ? (
-          <div className="space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex items-center space-x-4">
-                <Skeleton className="h-16 w-16" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-2/3" />
-                </div>
-                <Skeleton className="h-10 w-24" />
-              </div>
-            ))}
-          </div>
+          <div>Loading...</div>
         ) : (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
@@ -173,7 +145,7 @@ const AdminBooksPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {books.map((book) => (
+                {books?.map((book) => (
                   <tr key={book.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -209,6 +181,7 @@ const AdminBooksPage = () => {
                           size="sm"
                           className="text-red-600 hover:text-red-800"
                           onClick={() => handleDeleteBook(book.id)}
+                          disabled={deleteMutation.isLoading}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

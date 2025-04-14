@@ -1,29 +1,15 @@
-
-import React, { useState, useEffect } from 'react';
-import { Book } from '@/types/book';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { booksService } from '@/services/books-service';
 import BookGrid from '../books/BookGrid';
-import { dynamoDbService } from '@/lib/aws-dynamodb';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const FeaturedBooks = () => {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const loadFeaturedBooks = async () => {
-      try {
-        const allBooks = await dynamoDbService.getAllBooks();
-        const featuredBooks = allBooks.filter(book => book.featured);
-        setBooks(featuredBooks);
-      } catch (error) {
-        console.error('Failed to load featured books:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadFeaturedBooks();
-  }, []);
+  const { data: books, isLoading } = useQuery({
+    queryKey: ['books'],
+    queryFn: booksService.getAllBooks,
+    select: (data) => data.filter(book => book.featured),
+  });
 
   if (isLoading) {
     return (
