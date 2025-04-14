@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
-import { cognitoService } from '@/lib/aws-cognito';
+import { authService } from '@/lib/auth-service';
 import { Input } from '@/components/ui/input';
 
 const Header = () => {
@@ -22,9 +22,9 @@ const Header = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const isAuthenticated = cognitoService.isAuthenticated();
-  const username = cognitoService.getUsername();
-  const isAdmin = cognitoService.isAdmin();
+  const isAuthenticated = authService.isAuthenticated();
+  const username = authService.getUsername();
+  const isAdmin = authService.isAdmin();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +34,7 @@ const Header = () => {
   };
 
   const handleSignOut = async () => {
-    await cognitoService.signOut();
+    await authService.signOut();
     window.location.href = '/';
   };
 

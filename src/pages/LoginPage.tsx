@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import { cognitoService } from '../lib/aws-cognito';
+import { authService } from '../lib/auth-service';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +30,7 @@ const LoginPage = () => {
     setIsLoading(true);
     
     try {
-      const success = await cognitoService.signIn(username, password);
+      const success = await authService.signIn(username, password);
       
       if (success) {
         toast({
@@ -119,8 +119,8 @@ const LoginPage = () => {
         </Card>
         
         <div className="mt-8 text-center text-sm text-gray-500">
-          <p>This is a demo application.</p>
-          <p>Any username and password combination will work.</p>
+          <p>Login as "admin" to access admin features.</p>
+          <p>For regular user access, use any other username.</p>
         </div>
       </div>
     </Layout>
