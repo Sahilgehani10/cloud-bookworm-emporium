@@ -1,4 +1,3 @@
-
 import { 
   CognitoIdentityProviderClient, 
   InitiateAuthCommand,
@@ -9,9 +8,13 @@ import {
   GlobalSignOutCommand
 } from "@aws-sdk/client-cognito-identity-provider";
 import { awsConfig, COGNITO_USER_POOL_ID, COGNITO_CLIENT_ID, isAwsConfigured } from './aws-config';
+import { User } from '@/types/user';
 
 // Initialize Cognito client
 const cognitoClient = new CognitoIdentityProviderClient(awsConfig);
+
+// List of admin users (in a real app this would be stored in Cognito user attributes)
+const ADMIN_USERS = ['admin', 'admin@example.com'];
 
 export const cognitoService = {
   // Current user state
@@ -66,11 +69,13 @@ export const cognitoService = {
             accessToken: authResult.AccessToken,
             refreshToken: authResult.RefreshToken,
             expiration: new Date(Date.now() + (authResult.ExpiresIn || 3600) * 1000).toISOString(),
-            username: username
+            username: username,
+            isAdmin: ADMIN_USERS.includes(username)
           };
           
           localStorage.setItem('awsUserSession', JSON.stringify(sessionData));
           localStorage.setItem('username', username);
+          localStorage.setItem('isAdmin', ADMIN_USERS.includes(username).toString());
           return true;
         }
         return false;
@@ -81,8 +86,10 @@ export const cognitoService = {
     } else {
       // Fallback to mock authentication
       if (username && password) {
+        const isAdmin = ADMIN_USERS.includes(username);
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('username', username);
+        localStorage.setItem('isAdmin', isAdmin.toString());
         return true;
       }
       return false;
@@ -163,6 +170,29 @@ export const cognitoService = {
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('username');
     }
+  },
+  
+  // Get current user
+  getCurrentUser: (): User | null => {
+    if (!cognitoService.isAuthenticated()) {
+      return null;
+    }
+    
+    const username = localStorage.getItem('username');
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    
+    if (!username) return null;
+    
+    return {
+      username,
+      isAdmin
+    };
+  },
+  
+  // Check if current user is admin
+  isAdmin: (): boolean => {
+    const user = cognitoService.getCurrentUser();
+    return !!user && user.isAdmin;
   },
   
   // Get current username

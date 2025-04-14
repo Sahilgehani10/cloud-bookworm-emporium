@@ -8,7 +8,8 @@ import {
   X, 
   User,
   LogIn,
-  LogOut
+  LogOut,
+  BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
@@ -23,6 +24,7 @@ const Header = () => {
   
   const isAuthenticated = cognitoService.isAuthenticated();
   const username = cognitoService.getUsername();
+  const isAdmin = cognitoService.isAdmin();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +67,12 @@ const Header = () => {
             <Link to="/about" className="text-bookstore-secondary hover:text-bookstore-primary px-3 py-2 font-medium">
               About
             </Link>
+            {isAdmin && (
+              <Link to="/admin/books" className="text-bookstore-accent hover:text-bookstore-accent/80 px-3 py-2 font-medium flex items-center">
+                <BookOpen className="h-4 w-4 mr-1" />
+                Manage Books
+              </Link>
+            )}
           </nav>
 
           {/* Actions */}
@@ -167,6 +175,15 @@ const Header = () => {
               >
                 About
               </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin/books"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-bookstore-accent hover:bg-bookstore-background"
+                  onClick={toggleMenu}
+                >
+                  Manage Books
+                </Link>
+              )}
               <Link
                 to="/cart"
                 className="block px-3 py-2 rounded-md text-base font-medium text-bookstore-secondary hover:bg-bookstore-background"

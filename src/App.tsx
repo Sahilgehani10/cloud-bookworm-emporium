@@ -12,6 +12,7 @@ import CartPage from "./pages/CartPage";
 import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
 import AwsConfigPage from "./pages/AwsConfigPage";
+import AdminBooksPage from "./pages/AdminBooksPage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/cart" element={<CartPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/aws-config" element={<AwsConfigPage />} />
+            <Route path="/admin/books" element={<AdminBooksPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
